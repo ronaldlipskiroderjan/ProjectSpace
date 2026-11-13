@@ -4,7 +4,7 @@ target/
 .idea/
 .vscode/
 .env
-docs_dev/
+docs/
 HELP.md
 README.md
 *.iml

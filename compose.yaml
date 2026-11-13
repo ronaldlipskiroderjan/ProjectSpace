@@ -1,4 +1,17 @@
 services:
+  cucumber:
+    profiles: ["test"]
+    working_dir: /workspace
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: test
+      args:
+        LOCAL_UID: ${LOCAL_UID:-1000}
+        LOCAL_GID: ${LOCAL_GID:-1000}
+    volumes:
+      - .:/workspace:Z
+
   postgres:
     image: postgres:17-alpine
     restart: unless-stopped
