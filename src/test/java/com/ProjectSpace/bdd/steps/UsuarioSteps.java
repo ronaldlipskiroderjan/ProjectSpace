@@ -1,11 +1,12 @@
 package com.ProjectSpace.bdd.steps;
 
+import com.ProjectSpace.config.TokenProvider;
 import com.ProjectSpace.dto.request.UsuarioRequestDTO;
 import com.ProjectSpace.dto.response.TokenResponseDTO;
 import com.ProjectSpace.dto.response.UsuarioResponseDTO;
-import com.ProjectSpace.entity.UsuarioEntity;
-import com.ProjectSpace.repository.UsuarioRepository;
-import com.ProjectSpace.service.TokenService;
+import com.ProjectSpace.database.model.UsuarioEntity;
+import com.ProjectSpace.database.repository.UsuarioRepository;
+import com.ProjectSpace.service.AuthService;
 import com.ProjectSpace.service.UsuarioService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,6 +20,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -46,10 +48,13 @@ public class UsuarioSteps {
     private PasswordEncoder passwordEncoder;
 
     @Mock
-    private TokenService tokenService;
+    private TokenProvider tokenProvider;
 
     @InjectMocks
     private UsuarioService usuarioService;
+
+    @InjectMocks
+    private AuthService authService;
 
     private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
     private Map<String, String> dados;
@@ -67,10 +72,8 @@ public class UsuarioSteps {
         when(passwordEncoder.encode(any(String.class))).thenReturn("hash-seguro");
         when(usuarioRepository.save(any(UsuarioEntity.class)))
                 .thenAnswer(invocacao -> invocacao.getArgument(0));
-        TokenResponseDTO token = objectMapper.convertValue(Map.of(
-                "token", "token-jwt-seguro",
-                "tempoExpiracao", "3600"), TokenResponseDTO.class);
-        when(tokenService.gerarToken(any(UsuarioEntity.class))).thenReturn(token);
+        when(tokenProvider.gerarToken(any(Authentication.class))).thenReturn("token-jwt-seguro");
+        when(tokenProvider.getExpirationTime()).thenReturn(3600L);
     }
 
     @Dado("os dados para criar a conta de usuário:")
@@ -97,7 +100,7 @@ public class UsuarioSteps {
     @Quando("crio a conta de usuário")
     public void criarConta() {
         UsuarioRequestDTO request = request();
-        erro = catchThrowable(() -> respostaCadastro = usuarioService.criarUsuario(request));
+        erro = catchThrowable(() -> respostaCadastro = authService.criarUsuario(request));
     }
 
     @Quando("edito a conta de usuário")
@@ -142,10 +145,12 @@ public class UsuarioSteps {
     @E("o token deve ser gerado para o usuário salvo")
     public void verificarTokenGeradoParaUsuarioSalvo() {
         ArgumentCaptor<UsuarioEntity> usuarioSalvo = ArgumentCaptor.forClass(UsuarioEntity.class);
-        ArgumentCaptor<UsuarioEntity> usuarioDoToken = ArgumentCaptor.forClass(UsuarioEntity.class);
+        ArgumentCaptor<Authentication> autenticacaoDoToken =
+                ArgumentCaptor.forClass(Authentication.class);
         verify(usuarioRepository).save(usuarioSalvo.capture());
-        verify(tokenService).gerarToken(usuarioDoToken.capture());
-        assertThat(usuarioDoToken.getValue()).isSameAs(usuarioSalvo.getValue());
+        verify(tokenProvider).gerarToken(autenticacaoDoToken.capture());
+        assertThat(autenticacaoDoToken.getValue().getPrincipal())
+                .isSameAs(usuarioSalvo.getValue());
     }
 
     @Entao("a operação de usuário deve ser rejeitada com {string} sem salvar")
@@ -154,7 +159,7 @@ public class UsuarioSteps {
         assertThat(respostaCadastro).isNull();
         assertThat(respostaEdicao).isNull();
         verify(usuarioRepository, never()).save(any(UsuarioEntity.class));
-        verify(tokenService, never()).gerarToken(any(UsuarioEntity.class));
+        verify(tokenProvider, never()).gerarToken(any(Authentication.class));
     }
 
     private UsuarioRequestDTO request() {

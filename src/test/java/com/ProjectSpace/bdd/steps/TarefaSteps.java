@@ -2,10 +2,10 @@ package com.ProjectSpace.bdd.steps;
 
 import com.ProjectSpace.dto.request.TarefaRequestDTO;
 import com.ProjectSpace.dto.response.TarefaResponseDTO;
-import com.ProjectSpace.entity.ProjetoEntity;
-import com.ProjectSpace.entity.TarefaEntity;
-import com.ProjectSpace.repository.ProjetoRepository;
-import com.ProjectSpace.repository.TarefaRepository;
+import com.ProjectSpace.database.model.ProjetoEntity;
+import com.ProjectSpace.database.model.TarefaEntity;
+import com.ProjectSpace.database.repository.ProjetoRepository;
+import com.ProjectSpace.database.repository.TarefaRepository;
 import com.ProjectSpace.service.TarefaService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;

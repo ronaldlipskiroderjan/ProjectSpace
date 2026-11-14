@@ -1,8 +1,8 @@
 package com.ProjectSpace.bdd.steps;
 
 import com.ProjectSpace.dto.request.ProjetoRequestDTO;
-import com.ProjectSpace.entity.ProjetoEntity;
-import com.ProjectSpace.repository.ProjetoRepository;
+import com.ProjectSpace.database.model.ProjetoEntity;
+import com.ProjectSpace.database.repository.ProjetoRepository;
 import com.ProjectSpace.service.ProjetoService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.datatable.DataTable;

@@ -1,10 +1,10 @@
 package com.ProjectSpace.bdd.steps;
 
 import com.ProjectSpace.dto.request.LinkRequestDTO;
-import com.ProjectSpace.entity.LinkEntity;
-import com.ProjectSpace.entity.ProjetoEntity;
-import com.ProjectSpace.repository.LinkRepository;
-import com.ProjectSpace.repository.ProjetoRepository;
+import com.ProjectSpace.database.model.LinkEntity;
+import com.ProjectSpace.database.model.ProjetoEntity;
+import com.ProjectSpace.database.repository.LinkRepository;
+import com.ProjectSpace.database.repository.ProjetoRepository;
 import com.ProjectSpace.service.LinkService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.datatable.DataTable;

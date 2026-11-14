@@ -35,7 +35,8 @@ src/test/
 │       ├── ProjetoSteps.java      # Criação de projeto
 │       ├── TarefaSteps.java       # Criação, edição e exclusão de tarefa
 │       ├── LinkProjetoSteps.java  # Criação de link de projeto
-│       └── TagSteps.java          # Criação e vínculo de tags
+│       ├── TagSteps.java          # Criação e vínculo de tags
+│       └── VisualizacaoSteps.java # Consultas de perfil, projetos, tarefas, links e tags
 └── resources/features/
     ├── criar_usuario.feature
     ├── editar_usuario.feature
@@ -44,13 +45,18 @@ src/test/
     ├── editar_tarefa.feature
     ├── excluir_tarefa.feature
     ├── adicionar_link.feature
-    └── adicionar_tag.feature
+    ├── adicionar_tag.feature
+    ├── visualizar_perfil.feature
+    ├── visualizar_projetos.feature
+    ├── visualizar_tarefas.feature
+    ├── visualizar_links.feature
+    └── visualizar_tags.feature
 ```
 
 ## O que é real e o que é mock
 
 - A Service é a classe real que está sendo testada.
-- Os Repositories, o `PasswordEncoder` e o serviço de token são mocks.
+- Os Repositories, o `PasswordEncoder` e o `TokenProvider` são mocks.
 - Os DTOs são objetos reais; entidades existentes podem ser fixtures ou mocks, e a Entity criada pela Service é capturada no `save`.
 - Não há chamada HTTP, controller, banco real ou `@SpringBootTest`.
 
@@ -94,6 +100,8 @@ Eles não representam o valor que será gerado em produção. Uma Entity nova n�
 - Os métodos de criação retornam `void`, exceto o cadastro de usuário.
 - O cadastro retorna `TokenResponseDTO` com `token` e `tempoExpiracao`.
 - Os cenários de edição podem validar seus respectivos `*ResponseDTO`.
+- As consultas retornam `*ResponseDTO` ou listas de `*ResponseDTO`, nunca Entities.
+- Toda consulta valida que nenhum `save` ou `deleteById` foi executado.
 
 ## Como executar com Docker
 

@@ -23,7 +23,7 @@ COPY --chown=cucumber:cucumber src src
 
 FROM maven-base AS test
 
-CMD ["mvn", "-B", "-ntp", "-Dtest=CucumberTest", "test"]
+CMD ["mvn", "-o", "-B", "-ntp", "-Dtest=CucumberTest", "test"]
 
 FROM maven-base AS build
 
