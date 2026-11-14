@@ -1,13 +1,33 @@
-FROM eclipse-temurin:21-jdk-alpine AS build
+FROM maven:3.9-eclipse-temurin-21-alpine AS maven-base
+
+ARG LOCAL_UID=1000
+ARG LOCAL_GID=1000
+
+RUN addgroup -g "${LOCAL_GID}" cucumber \
+    && adduser -D -u "${LOCAL_UID}" -G cucumber cucumber \
+    && mkdir -p /workspace /home/cucumber/.m2 \
+    && chown -R cucumber:cucumber /workspace /home/cucumber
 
 WORKDIR /workspace
 
-COPY .mvn .mvn
-COPY mvnw pom.xml ./
-RUN chmod +x mvnw && ./mvnw dependency:go-offline -B
+ENV HOME=/home/cucumber \
+    MAVEN_CONFIG=/home/cucumber/.m2
 
-COPY src src
-RUN ./mvnw package -DskipTests -B
+COPY --chown=cucumber:cucumber pom.xml ./
+
+USER cucumber
+
+RUN mvn -B -ntp dependency:go-offline
+
+COPY --chown=cucumber:cucumber src src
+
+FROM maven-base AS test
+
+CMD ["mvn", "-o", "-B", "-ntp", "-Dtest=CucumberTest", "test"]
+
+FROM maven-base AS build
+
+RUN mvn -B -ntp -Dmaven.test.skip=true package
 
 FROM eclipse-temurin:21-jre-alpine
 
