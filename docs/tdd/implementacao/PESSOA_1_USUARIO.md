@@ -40,24 +40,24 @@ Para a integração real com o provider, `UsuarioEntity` deverá implementar `Us
 
 ## 2. Editar usuário
 
-Implemente `UsuarioService.editarUsuario(UUID usuarioAutenticadoId, UUID usuarioId, UsuarioRequestDTO request)`:
+Implemente `UsuarioService.editarUsuario(String emailUsuarioAutenticado, UsuarioRequestDTO request)`.
+O e-mail autenticado deve vir de `Authentication.getName()` no endpoint, nunca do corpo da requisição:
 
-1. Comparar o usuário autenticado com o usuário solicitado.
-2. Se os IDs forem diferentes, lançar `ACESSO_NEGADO`.
-3. Buscar a conta com `usuarioRepository.findById(usuarioId)`.
-4. Validar o formato do novo e-mail; para formato inválido, lançar `EMAIL_INVALIDO`.
-5. Normalizar o e-mail com `trim()` e letras minúsculas.
-6. Consultar `findByEmailIgnoreCase`.
-7. Se o e-mail pertencer a outro `usuarioId`, lançar `EMAIL_DUPLICADO`.
-8. Atualizar somente nome e e-mail. A edição não deve apagar nem substituir `senhaHash`.
-9. Salvar a mesma entidade recuperada.
-10. Retornar `UsuarioResponseDTO` somente com `usuarioId`, `nome` e `email`.
+1. Buscar a conta com `usuarioRepository.findByEmailIgnoreCase(emailUsuarioAutenticado)`.
+2. Se a conta autenticada não existir, lançar `USUARIO_NAO_ENCONTRADO`.
+3. Validar o formato do novo e-mail; para formato inválido, lançar `EMAIL_INVALIDO`.
+4. Normalizar o novo e-mail com `trim()` e letras minúsculas.
+5. Se o novo e-mail for diferente do atual, consultar `findByEmailIgnoreCase`.
+6. Se o novo e-mail pertencer a outro usuário, lançar `EMAIL_DUPLICADO`.
+7. Atualizar somente nome e e-mail. A edição não deve apagar nem substituir `senhaHash`.
+8. Salvar a mesma entidade recuperada.
+9. Retornar `UsuarioResponseDTO` somente com `usuarioId`, `nome` e `email`.
 
 ## 3. Visualizar perfil
 
-Implemente `UsuarioService.buscarPerfil(UUID usuarioAutenticadoId)`:
+Implemente `UsuarioService.buscarPerfil(String emailUsuarioAutenticado)`:
 
-1. Buscar o usuário autenticado com `usuarioRepository.findById`.
+1. Buscar o usuário autenticado com `usuarioRepository.findByEmailIgnoreCase`.
 2. Se ele não existir, lançar `USUARIO_NAO_ENCONTRADO`.
 3. Retornar `UsuarioResponseDTO` com `usuarioId`, `nome` e `email`.
 4. Não retornar senha ou hash e não chamar nenhum método de escrita.

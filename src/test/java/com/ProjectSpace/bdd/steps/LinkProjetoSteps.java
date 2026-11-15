@@ -3,10 +3,10 @@ package com.ProjectSpace.bdd.steps;
 import com.ProjectSpace.dto.request.LinkRequestDTO;
 import com.ProjectSpace.database.model.LinkEntity;
 import com.ProjectSpace.database.model.ProjetoEntity;
+import com.ProjectSpace.database.model.UsuarioEntity;
 import com.ProjectSpace.database.repository.LinkRepository;
 import com.ProjectSpace.database.repository.ProjetoRepository;
 import com.ProjectSpace.service.LinkService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.Before;
 import io.cucumber.java.pt.Dado;
@@ -44,7 +44,6 @@ public class LinkProjetoSteps {
     @InjectMocks
     private LinkService linkService;
 
-    private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
     private Map<String, String> dados;
     private Throwable erro;
 
@@ -64,15 +63,21 @@ public class LinkProjetoSteps {
     @E("existe para o link um projeto com id {string} e usuário {string}")
     public void existeProjeto(String projetoId, String usuarioId) {
         ProjetoEntity projeto = mock(ProjetoEntity.class);
+        UsuarioEntity usuario = mock(UsuarioEntity.class);
         when(projeto.getProjetoId()).thenReturn(uuid(projetoId));
-        when(projeto.getUsuarioId()).thenReturn(uuid(usuarioId));
+        when(projeto.getUsuario()).thenReturn(usuario);
+        when(usuario.getUsuarioId()).thenReturn(uuid(usuarioId));
         when(projetoRepository.findById(uuid(projetoId))).thenReturn(Optional.of(projeto));
     }
 
     @Quando("adiciono o link ao projeto")
     public void adicionarLink() {
-        LinkRequestDTO request = objectMapper.convertValue(dados, LinkRequestDTO.class);
-        erro = catchThrowable(() -> linkService.adicionarLink(USUARIO_AUTENTICADO_ID, request));
+        erro = catchThrowable(() -> {
+            LinkRequestDTO request = new LinkRequestDTO(
+                    uuid(dados.get("projetoId")),
+                    dados.get("url"));
+            linkService.adicionarLink(USUARIO_AUTENTICADO_ID, request);
+        });
     }
 
     @Entao("deve salvar o link com os valores:")
@@ -101,8 +106,11 @@ public class LinkProjetoSteps {
 
     private void assertEntityContem(LinkEntity link, Map<String, String> esperado) {
         esperado.forEach((campo, valor) -> {
-            Object valorEsperado = campo.equals("projetoId") ? UUID.fromString(valor) : valor;
-            assertThat(link).extracting(campo).isEqualTo(valorEsperado);
+            if (campo.equals("projetoId")) {
+                assertThat(link.getProjeto().getProjetoId()).isEqualTo(UUID.fromString(valor));
+            } else {
+                assertThat(link).extracting(campo).isEqualTo(valor);
+            }
         });
     }
 

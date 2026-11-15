@@ -72,14 +72,78 @@ As 44 falhas são comportamentais: os métodos das Services ainda não persistem
 
 Esse resultado registra o **RED comportamental** do projeto.
 
+
+A fase **GREEN total** será registrada quando os 44 cenários passarem. Cada
+incremento funcional concluído será registrado antes disso como um GREEN parcial.
+
+## GREEN parcial: Implementação 1 (usuário)
+
+- **Status:** concluída
+- **Data:** 14/11/2026
+- **Hora de conclusão:** 23:47 (BRT/UTC-3)
+
+### Escopo implementado
+
+A primeira implementação GREEN concluiu o fluxo de usuário, contemplando:
+
+- cadastro de conta;
+- edição da própria conta autenticada;
+- visualização do próprio perfil.
+
+### Regras de cadastro
+
+- Validação de nome e e-mail obrigatórios.
+- Validação do tamanho mínimo da senha.
+- Normalização do e-mail antes da consulta e persistência.
+- Rejeição de e-mail duplicado.
+- Codificação da senha antes da persistência.
+- Associação da role `ROLE_USER`.
+- Geração do UUID pela camada de persistência.
+- Autenticação das credenciais e emissão do token JWT.
+
+### Regras de edição
+
+- Identificação da conta pelo e-mail proveniente do contexto de autenticação.
+- Ausência de ID de usuário no corpo ou na rota de edição.
+- Validação e normalização do novo e-mail.
+- Rejeição do novo e-mail quando utilizado por outra conta.
+- Atualização somente do nome e do e-mail, preservando a senha cadastrada.
+- Retorno do UUID, nome e e-mail, sem exposição da senha ou de seu hash.
+
+### Regras de visualização
+
+- Consulta da conta pelo e-mail do usuário autenticado.
+- Retorno somente do UUID, nome e e-mail.
+- Rejeição da consulta quando o usuário autenticado não for encontrado.
+- Operação estritamente de leitura, sem alteração de dados.
+
+### Comando executado
+
+```text
+Tests run: 44, Failures: 44, Errors: 0, Skipped: 0
+BUILD FAILURE
+```
+
+### Resultado
+
+Os 11 cenários pertencentes ao fluxo de usuário passaram. A execução completa
+permaneceu vermelha porque as implementações de projeto, tarefa, link e tag ainda
+não haviam sido realizadas:
+
+```text
+Tests run: 44, Failures: 33, Errors: 0, Skipped: 0
+BUILD FAILURE
+```
+
+O resultado representa um **GREEN parcial**: todos os comportamentos da primeira
+implementação estão verdes, enquanto os 33 cenários das próximas implementações
+continuam no estado RED.
+
+### Evidência do GREEN parcial
+
+- [`results/GREEN_TDD_Impl1.png`](./results/GREEN_TDD_Impl1.png)
+
 ### Próxima etapa
 
-Implementar nas Services as regras de negócio de:
-
-- criação, edição e visualização de usuário;
-- criação e visualização de projetos;
-- adição, edição, exclusão e visualização de tarefas;
-- adição e visualização de links;
-- criação, vínculo ao projeto e visualização de tags.
-
-A fase **GREEN** será registrada quando os 44 cenários passarem.
+Implementar o fluxo de criação e visualização de projetos e a adição de tarefas,
+mantendo os 11 cenários de usuário verdes durante a evolução da suíte.

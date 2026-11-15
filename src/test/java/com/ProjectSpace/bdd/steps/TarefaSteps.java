@@ -4,6 +4,7 @@ import com.ProjectSpace.dto.request.TarefaRequestDTO;
 import com.ProjectSpace.dto.response.TarefaResponseDTO;
 import com.ProjectSpace.database.model.ProjetoEntity;
 import com.ProjectSpace.database.model.TarefaEntity;
+import com.ProjectSpace.database.model.UsuarioEntity;
 import com.ProjectSpace.database.repository.ProjetoRepository;
 import com.ProjectSpace.database.repository.TarefaRepository;
 import com.ProjectSpace.service.TarefaService;
@@ -21,6 +22,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -74,8 +76,10 @@ public class TarefaSteps {
     @E("existe para a tarefa um projeto com id {string} e usuário {string}")
     public void existeProjeto(String projetoId, String usuarioId) {
         ProjetoEntity projeto = mock(ProjetoEntity.class);
+        UsuarioEntity usuario = mock(UsuarioEntity.class);
         when(projeto.getProjetoId()).thenReturn(uuid(projetoId));
-        when(projeto.getUsuarioId()).thenReturn(uuid(usuarioId));
+        when(projeto.getUsuario()).thenReturn(usuario);
+        when(usuario.getUsuarioId()).thenReturn(uuid(usuarioId));
         when(projetoRepository.findById(uuid(projetoId))).thenReturn(Optional.of(projeto));
     }
 
@@ -83,22 +87,25 @@ public class TarefaSteps {
     public void existeTarefa(String tarefaId, String projetoId) {
         TarefaEntity tarefa = new TarefaEntity();
         ReflectionTestUtils.setField(tarefa, "tarefaId", uuid(tarefaId));
-        ReflectionTestUtils.setField(tarefa, "projetoId", uuid(projetoId));
+        tarefa.setProjeto(projetoComId(projetoId));
         when(tarefaRepository.findById(uuid(tarefaId))).thenReturn(Optional.of(tarefa));
     }
 
     @Quando("adiciono a tarefa")
     public void adicionarTarefa() {
-        TarefaRequestDTO request = requestSemId();
-        erro = catchThrowable(() -> tarefaService.adicionarTarefa(USUARIO_AUTENTICADO_ID, request));
+        erro = catchThrowable(() -> {
+            TarefaRequestDTO request = requestSemId();
+            tarefaService.adicionarTarefa(USUARIO_AUTENTICADO_ID, request);
+        });
     }
 
     @Quando("edito a tarefa")
     public void editarTarefa() {
-        UUID tarefaId = uuid(dados.get("tarefaId"));
-        TarefaRequestDTO request = requestSemId();
-        erro = catchThrowable(() -> resposta =
-                tarefaService.editarTarefa(USUARIO_AUTENTICADO_ID, tarefaId, request));
+        erro = catchThrowable(() -> {
+            UUID tarefaId = uuid(dados.get("tarefaId"));
+            TarefaRequestDTO request = requestSemId();
+            resposta = tarefaService.editarTarefa(USUARIO_AUTENTICADO_ID, tarefaId, request);
+        });
     }
 
     @Quando("excluo a tarefa")
@@ -157,9 +164,12 @@ public class TarefaSteps {
     }
 
     private TarefaRequestDTO requestSemId() {
-        Map<String, String> camposDoRequest = new HashMap<>(dados);
-        camposDoRequest.remove("tarefaId");
-        return objectMapper.convertValue(camposDoRequest, TarefaRequestDTO.class);
+        return new TarefaRequestDTO(
+                uuidOuNull(dados.get("projetoId")),
+                dados.get("titulo"),
+                dados.get("prioridade"),
+                dados.get("status"),
+                dataOuNull(dados.get("dataLimite")));
     }
 
     private void assertResponseContem(Map<String, String> esperado) {
@@ -170,12 +180,30 @@ public class TarefaSteps {
 
     private void assertEntityContem(TarefaEntity tarefa, Map<String, String> esperado) {
         esperado.forEach((campo, valor) -> {
-            Object valorEsperado = campo.endsWith("Id") ? UUID.fromString(valor) : valor;
-            assertThat(tarefa).extracting(campo).isEqualTo(valorEsperado);
+            if (campo.equals("projetoId")) {
+                assertThat(tarefa.getProjeto().getProjetoId()).isEqualTo(UUID.fromString(valor));
+            } else {
+                Object valorEsperado = campo.endsWith("Id") ? UUID.fromString(valor) : valor;
+                assertThat(tarefa).extracting(campo).isEqualTo(valorEsperado);
+            }
         });
+    }
+
+    private ProjetoEntity projetoComId(String projetoId) {
+        ProjetoEntity projeto = new ProjetoEntity();
+        projeto.setProjetoId(uuid(projetoId));
+        return projeto;
     }
 
     private UUID uuid(String valor) {
         return UUID.fromString(valor);
+    }
+
+    private UUID uuidOuNull(String valor) {
+        return valor == null || valor.isBlank() ? null : uuid(valor);
+    }
+
+    private LocalDate dataOuNull(String valor) {
+        return valor == null || valor.isBlank() ? null : LocalDate.parse(valor);
     }
 }

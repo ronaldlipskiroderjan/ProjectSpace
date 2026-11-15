@@ -8,5 +8,5 @@ import java.util.UUID;
 
 public interface ProjetoRepository extends JpaRepository<ProjetoEntity, UUID> {
 
-    List<ProjetoEntity> findAllByUsuarioId(UUID usuarioId);
+    List<ProjetoEntity> findAllByUsuario_UsuarioId(UUID usuarioId);
 }

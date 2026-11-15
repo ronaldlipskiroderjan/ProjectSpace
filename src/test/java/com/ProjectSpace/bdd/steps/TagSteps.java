@@ -3,10 +3,10 @@ package com.ProjectSpace.bdd.steps;
 import com.ProjectSpace.dto.request.TagRequestDTO;
 import com.ProjectSpace.database.model.ProjetoEntity;
 import com.ProjectSpace.database.model.TagEntity;
+import com.ProjectSpace.database.model.UsuarioEntity;
 import com.ProjectSpace.database.repository.ProjetoRepository;
 import com.ProjectSpace.database.repository.TagRepository;
 import com.ProjectSpace.service.TagService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.Before;
 import io.cucumber.java.pt.Dado;
@@ -47,7 +47,6 @@ public class TagSteps {
     @InjectMocks
     private TagService tagService;
 
-    private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
     private final Map<UUID, ProjetoEntity> projetos = new HashMap<>();
     private final Map<UUID, Set<TagEntity>> tagsDosProjetos = new HashMap<>();
     private final Map<UUID, TagEntity> tags = new HashMap<>();
@@ -81,9 +80,11 @@ public class TagSteps {
     public void existeProjeto(String projetoId, String usuarioId) {
         UUID id = uuid(projetoId);
         ProjetoEntity projeto = mock(ProjetoEntity.class);
+        UsuarioEntity usuario = mock(UsuarioEntity.class);
         Set<TagEntity> tagsDoProjeto = new HashSet<>();
         when(projeto.getProjetoId()).thenReturn(id);
-        when(projeto.getUsuarioId()).thenReturn(uuid(usuarioId));
+        when(projeto.getUsuario()).thenReturn(usuario);
+        when(usuario.getUsuarioId()).thenReturn(uuid(usuarioId));
         when(projeto.getTags()).thenReturn(tagsDoProjeto);
         when(projetoRepository.findById(id)).thenReturn(Optional.of(projeto));
         projetos.put(id, projeto);
@@ -103,8 +104,13 @@ public class TagSteps {
 
     @Quando("crio a tag")
     public void criarTag() {
-        TagRequestDTO request = objectMapper.convertValue(dados, TagRequestDTO.class);
-        erro = catchThrowable(() -> tagService.criarTag(request));
+        erro = catchThrowable(() -> {
+            TagRequestDTO request = new TagRequestDTO(
+                    dados.get("nome"),
+                    uuidOuNull(dados.get("projetoId")),
+                    uuidOuNull(dados.get("tagId")));
+            tagService.criarTag(request);
+        });
     }
 
     @Quando("vinculo a tag ao projeto")
@@ -174,5 +180,9 @@ public class TagSteps {
 
     private UUID uuid(String valor) {
         return UUID.fromString(valor);
+    }
+
+    private UUID uuidOuNull(String valor) {
+        return valor == null || valor.isBlank() ? null : uuid(valor);
     }
 }

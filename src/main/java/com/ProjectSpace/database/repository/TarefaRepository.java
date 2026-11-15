@@ -8,5 +8,5 @@ import java.util.UUID;
 
 public interface TarefaRepository extends JpaRepository<TarefaEntity, UUID> {
 
-    List<TarefaEntity> findAllByProjetoId(UUID projetoId);
+    List<TarefaEntity> findAllByProjeto_ProjetoId(UUID projetoId);
 }

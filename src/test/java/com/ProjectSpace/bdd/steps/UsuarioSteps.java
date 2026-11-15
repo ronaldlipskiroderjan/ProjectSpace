@@ -1,11 +1,14 @@
 package com.ProjectSpace.bdd.steps;
 
 import com.ProjectSpace.config.TokenProvider;
+import com.ProjectSpace.database.model.RoleEntity;
+import com.ProjectSpace.database.repository.RoleRepository;
 import com.ProjectSpace.dto.request.UsuarioRequestDTO;
 import com.ProjectSpace.dto.response.TokenResponseDTO;
 import com.ProjectSpace.dto.response.UsuarioResponseDTO;
 import com.ProjectSpace.database.model.UsuarioEntity;
 import com.ProjectSpace.database.repository.UsuarioRepository;
+import com.ProjectSpace.enums.RoleTypeEnum;
 import com.ProjectSpace.service.AuthService;
 import com.ProjectSpace.service.UsuarioService;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -20,6 +23,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -38,17 +42,26 @@ import static org.mockito.Mockito.when;
 
 public class UsuarioSteps {
 
-    private static final UUID USUARIO_AUTENTICADO_ID =
-            UUID.fromString("00000000-0000-0000-0000-000000000001");
+    private static final String USUARIO_AUTENTICADO_EMAIL = "ana@example.com";
+    private static final long EXPIRACAO_TOKEN = 900000L;
 
     @Mock
     private UsuarioRepository usuarioRepository;
+
+    @Mock
+    private RoleRepository roleRepository;
 
     @Mock
     private PasswordEncoder passwordEncoder;
 
     @Mock
     private TokenProvider tokenProvider;
+
+    @Mock
+    private AuthenticationManager authenticationManager;
+
+    @Mock
+    private Authentication autenticacaoValidada;
 
     @InjectMocks
     private UsuarioService usuarioService;
@@ -72,8 +85,14 @@ public class UsuarioSteps {
         when(passwordEncoder.encode(any(String.class))).thenReturn("hash-seguro");
         when(usuarioRepository.save(any(UsuarioEntity.class)))
                 .thenAnswer(invocacao -> invocacao.getArgument(0));
+        when(roleRepository.findByNome(RoleTypeEnum.ROLE_USER.name()))
+                .thenReturn(Optional.of(RoleEntity.builder()
+                        .nome(RoleTypeEnum.ROLE_USER.name())
+                        .build()));
+        when(authenticationManager.authenticate(any(Authentication.class)))
+                .thenReturn(autenticacaoValidada);
         when(tokenProvider.gerarToken(any(Authentication.class))).thenReturn("token-jwt-seguro");
-        when(tokenProvider.getExpirationTime()).thenReturn(3600L);
+        ReflectionTestUtils.setField(authService, "expirationTime", EXPIRACAO_TOKEN);
     }
 
     @Dado("os dados para criar a conta de usuário:")
@@ -82,15 +101,24 @@ public class UsuarioSteps {
         dados = valoresDa(tabela);
     }
 
-    @E("existe um usuário com id {string}")
-    public void existeUsuario(String usuarioId) {
+    @E("existe um usuário autenticado com e-mail {string} e id {string}")
+    public void existeUsuarioAutenticado(String email, String usuarioId) {
         UsuarioEntity usuario = new UsuarioEntity();
         ReflectionTestUtils.setField(usuario, "usuarioId", uuid(usuarioId));
-        when(usuarioRepository.findById(uuid(usuarioId))).thenReturn(Optional.of(usuario));
+        ReflectionTestUtils.setField(usuario, "email", email);
+        when(usuarioRepository.findByEmailIgnoreCase(email)).thenReturn(Optional.of(usuario));
+    }
+
+    @E("existe outro usuário com e-mail normalizado {string}")
+    public void existeUsuarioComEmail(String email) {
+        UsuarioEntity usuario = new UsuarioEntity();
+        ReflectionTestUtils.setField(usuario, "email", email);
+        when(usuarioRepository.findByEmailIgnoreCase(email)).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.existsByEmailIgnoreCase(email)).thenReturn(true);
     }
 
     @E("existe outro usuário com e-mail normalizado {string} e id {string}")
-    public void existeUsuarioComEmail(String email, String usuarioId) {
+    public void existeOutroUsuarioComEmail(String email, String usuarioId) {
         UsuarioEntity usuario = new UsuarioEntity();
         ReflectionTestUtils.setField(usuario, "usuarioId", uuid(usuarioId));
         ReflectionTestUtils.setField(usuario, "email", email);
@@ -99,16 +127,19 @@ public class UsuarioSteps {
 
     @Quando("crio a conta de usuário")
     public void criarConta() {
-        UsuarioRequestDTO request = request();
-        erro = catchThrowable(() -> respostaCadastro = authService.criarUsuario(request));
+        erro = catchThrowable(() -> {
+            UsuarioRequestDTO request = request();
+            respostaCadastro = authService.criarUsuario(request);
+        });
     }
 
     @Quando("edito a conta de usuário")
     public void editarConta() {
-        UsuarioRequestDTO request = request();
-        UUID usuarioId = uuid(dados.get("usuarioId"));
-        erro = catchThrowable(() -> respostaEdicao =
-                usuarioService.editarUsuario(USUARIO_AUTENTICADO_ID, usuarioId, request));
+        erro = catchThrowable(() -> {
+            UsuarioRequestDTO request = request();
+            respostaEdicao = usuarioService.editarUsuario(
+                    USUARIO_AUTENTICADO_EMAIL, request);
+        });
     }
 
     @Entao("deve salvar o usuário com os valores:")
@@ -142,15 +173,23 @@ public class UsuarioSteps {
         verify(passwordEncoder).encode(dados.get("senha"));
     }
 
-    @E("o token deve ser gerado para o usuário salvo")
-    public void verificarTokenGeradoParaUsuarioSalvo() {
+    @E("deve associar a role {string} ao usuário")
+    public void verificarRoleDoUsuario(String role) {
         ArgumentCaptor<UsuarioEntity> usuarioSalvo = ArgumentCaptor.forClass(UsuarioEntity.class);
-        ArgumentCaptor<Authentication> autenticacaoDoToken =
-                ArgumentCaptor.forClass(Authentication.class);
         verify(usuarioRepository).save(usuarioSalvo.capture());
-        verify(tokenProvider).gerarToken(autenticacaoDoToken.capture());
-        assertThat(autenticacaoDoToken.getValue().getPrincipal())
-                .isSameAs(usuarioSalvo.getValue());
+        assertThat(usuarioSalvo.getValue().getRoles())
+                .extracting(RoleEntity::getNome)
+                .containsExactly(role);
+    }
+
+    @E("as credenciais devem ser autenticadas antes de gerar o token")
+    public void verificarAutenticacaoAntesDoToken() {
+        ArgumentCaptor<Authentication> credenciais =
+                ArgumentCaptor.forClass(Authentication.class);
+        verify(authenticationManager).authenticate(credenciais.capture());
+        assertThat(credenciais.getValue().getPrincipal()).isEqualTo(dados.get("email"));
+        assertThat(credenciais.getValue().getCredentials()).isEqualTo(dados.get("senha"));
+        verify(tokenProvider).gerarToken(autenticacaoValidada);
     }
 
     @Entao("a operação de usuário deve ser rejeitada com {string} sem salvar")
@@ -159,13 +198,15 @@ public class UsuarioSteps {
         assertThat(respostaCadastro).isNull();
         assertThat(respostaEdicao).isNull();
         verify(usuarioRepository, never()).save(any(UsuarioEntity.class));
+        verify(authenticationManager, never()).authenticate(any(Authentication.class));
         verify(tokenProvider, never()).gerarToken(any(Authentication.class));
     }
 
     private UsuarioRequestDTO request() {
-        Map<String, String> camposDoRequest = new HashMap<>(dados);
-        camposDoRequest.remove("usuarioId");
-        return objectMapper.convertValue(camposDoRequest, UsuarioRequestDTO.class);
+        return new UsuarioRequestDTO(
+                dados.get("nome"),
+                dados.get("email"),
+                dados.get("senha"));
     }
 
     private void assertResponseContem(Object resposta, Map<String, String> esperado) {
@@ -180,7 +221,7 @@ public class UsuarioSteps {
             Object valorEsperado = campo.endsWith("Id") ? UUID.fromString(valor) : valor;
             assertThat(usuario).extracting(campo).isEqualTo(valorEsperado);
         });
-        if (!dados.containsKey("usuarioId")) {
+        if (!esperado.containsKey("usuarioId")) {
             assertThat(usuario.getUsuarioId()).isNull();
         }
     }
