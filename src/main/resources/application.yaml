@@ -12,3 +12,7 @@ spring:
 
 server:
   port: ${SERVER_PORT:8080}
+
+jwt:
+  expiration: ${JWT_EXPIRATION:900000}
+  key: ${JWT_KEY:;[m*TXi)Jiut2MM{s1T'-%l"-Ahc6#V#$B>&{MPSw2x6|Cj(5G@<8*lW$.%|#?j"O.%**R\X9XXEg~7Q*NkcMZ6Nh2Do2d5$8!0ro6DbxT),]m-z,f'/S|TFPdSLdM1F)&*Dd!jnueUvX"}]9qpqFI+zH6?;&LLb?hRlU|q3U#Q[iW/E5e]VFWX1qgG6a'6rB\k3r0V?1r;o:oCH9yFIN`9f5~t*ZlTW0L)AS?/`uoVmXV|1.pvXEm;;[SN.!!By}

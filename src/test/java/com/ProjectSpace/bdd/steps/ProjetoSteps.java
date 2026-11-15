@@ -4,7 +4,6 @@ import com.ProjectSpace.dto.request.ProjetoRequestDTO;
 import com.ProjectSpace.database.model.ProjetoEntity;
 import com.ProjectSpace.database.repository.ProjetoRepository;
 import com.ProjectSpace.service.ProjetoService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.Before;
 import io.cucumber.java.pt.Dado;
@@ -37,7 +36,6 @@ public class ProjetoSteps {
     @InjectMocks
     private ProjetoService projetoService;
 
-    private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
     private Map<String, String> dados;
     private UUID usuarioAutenticadoId;
     private Throwable erro;
@@ -63,8 +61,13 @@ public class ProjetoSteps {
 
     @Quando("crio o projeto")
     public void criarProjeto() {
-        ProjetoRequestDTO request = objectMapper.convertValue(dados, ProjetoRequestDTO.class);
-        erro = catchThrowable(() -> projetoService.criarProjeto(usuarioAutenticadoId, request));
+        erro = catchThrowable(() -> {
+            ProjetoRequestDTO request = new ProjetoRequestDTO(
+                    dados.get("titulo"),
+                    dados.get("prioridade"),
+                    dados.get("status"));
+            projetoService.criarProjeto(usuarioAutenticadoId, request);
+        });
     }
 
     @Entao("deve salvar o projeto com os valores:")
@@ -93,8 +96,11 @@ public class ProjetoSteps {
 
     private void assertEntityContem(ProjetoEntity projeto, Map<String, String> esperado) {
         esperado.forEach((campo, valor) -> {
-            Object valorEsperado = campo.equals("usuarioId") ? UUID.fromString(valor) : valor;
-            assertThat(projeto).extracting(campo).isEqualTo(valorEsperado);
+            if (campo.equals("usuarioId")) {
+                assertThat(projeto.getUsuario().getUsuarioId()).isEqualTo(UUID.fromString(valor));
+            } else {
+                assertThat(projeto).extracting(campo).isEqualTo(valor);
+            }
         });
     }
 }

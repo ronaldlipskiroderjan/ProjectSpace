@@ -47,6 +47,7 @@ public class VisualizacaoSteps {
 
     private static final UUID USUARIO_AUTENTICADO_ID =
             UUID.fromString("00000000-0000-0000-0000-000000000001");
+    private static final String USUARIO_AUTENTICADO_EMAIL = "ana@example.com";
 
     @Mock
     private UsuarioRepository usuarioRepository;
@@ -80,6 +81,7 @@ public class VisualizacaoSteps {
 
     private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
     private UUID usuarioAutenticadoId;
+    private String emailUsuarioAutenticado;
     private UsuarioResponseDTO perfil;
     private List<?> resultados;
     private Throwable erro;
@@ -90,6 +92,7 @@ public class VisualizacaoSteps {
     public void prepararCenario() {
         MockitoAnnotations.openMocks(this);
         usuarioAutenticadoId = USUARIO_AUTENTICADO_ID;
+        emailUsuarioAutenticado = USUARIO_AUTENTICADO_EMAIL;
         perfil = null;
         resultados = null;
         erro = null;
@@ -104,12 +107,15 @@ public class VisualizacaoSteps {
         usuario.setUsuarioId(uuid(dados.get("usuarioId")));
         usuario.setNome(dados.get("nome"));
         usuario.setEmail(dados.get("email"));
-        when(usuarioRepository.findById(usuario.getUsuarioId())).thenReturn(java.util.Optional.of(usuario));
+        emailUsuarioAutenticado = usuario.getEmail();
+        when(usuarioRepository.findByEmailIgnoreCase(usuario.getEmail()))
+                .thenReturn(java.util.Optional.of(usuario));
     }
 
     @Dado("não há usuário autenticado para visualização")
     public void usuarioNaoAutenticado() {
         usuarioAutenticadoId = null;
+        emailUsuarioAutenticado = null;
     }
 
     @Dado("existem para visualização os projetos:")
@@ -117,14 +123,16 @@ public class VisualizacaoSteps {
         List<ProjetoEntity> projetos = tabela.asMaps(String.class, String.class).stream()
                 .map(this::novoProjeto)
                 .toList();
-        when(projetoRepository.findAllByUsuarioId(USUARIO_AUTENTICADO_ID)).thenReturn(projetos);
+        when(projetoRepository.findAllByUsuario_UsuarioId(USUARIO_AUTENTICADO_ID)).thenReturn(projetos);
     }
 
     @Dado("existe para visualização um projeto com id {string} e usuário {string}")
     public void existeProjeto(String projetoId, String usuarioId) {
         projetoConsultado = mock(ProjetoEntity.class);
+        UsuarioEntity usuario = mock(UsuarioEntity.class);
         when(projetoConsultado.getProjetoId()).thenReturn(uuid(projetoId));
-        when(projetoConsultado.getUsuarioId()).thenReturn(uuid(usuarioId));
+        when(projetoConsultado.getUsuario()).thenReturn(usuario);
+        when(usuario.getUsuarioId()).thenReturn(uuid(usuarioId));
         when(projetoRepository.findById(uuid(projetoId)))
                 .thenReturn(java.util.Optional.of(projetoConsultado));
     }
@@ -134,7 +142,8 @@ public class VisualizacaoSteps {
         List<TarefaEntity> tarefas = tabela.asMaps(String.class, String.class).stream()
                 .map(this::novaTarefa)
                 .toList();
-        when(tarefaRepository.findAllByProjetoId(tarefas.getFirst().getProjetoId()))
+        when(tarefaRepository.findAllByProjeto_ProjetoId(
+                tarefas.getFirst().getProjeto().getProjetoId()))
                 .thenReturn(tarefas);
     }
 
@@ -143,7 +152,8 @@ public class VisualizacaoSteps {
         List<LinkEntity> links = tabela.asMaps(String.class, String.class).stream()
                 .map(this::novoLink)
                 .toList();
-        when(linkRepository.findAllByProjetoId(links.getFirst().getProjetoId()))
+        when(linkRepository.findAllByProjeto_ProjetoId(
+                links.getFirst().getProjeto().getProjetoId()))
                 .thenReturn(links);
     }
 
@@ -159,7 +169,7 @@ public class VisualizacaoSteps {
     @Quando("visualizo meu perfil")
     public void visualizarPerfil() {
         tipoConsulta = TipoConsulta.PERFIL;
-        erro = catchThrowable(() -> perfil = usuarioService.buscarPerfil(usuarioAutenticadoId));
+        erro = catchThrowable(() -> perfil = usuarioService.buscarPerfil(emailUsuarioAutenticado));
     }
 
     @Quando("visualizo meus projetos")
@@ -219,11 +229,11 @@ public class VisualizacaoSteps {
         assertThat(resultados).isNull();
 
         if (tipoConsulta == TipoConsulta.PROJETOS) {
-            verify(projetoRepository, never()).findAllByUsuarioId(any());
+            verify(projetoRepository, never()).findAllByUsuario_UsuarioId(any());
         } else if (tipoConsulta == TipoConsulta.TAREFAS) {
-            verify(tarefaRepository, never()).findAllByProjetoId(any());
+            verify(tarefaRepository, never()).findAllByProjeto_ProjetoId(any());
         } else if (tipoConsulta == TipoConsulta.LINKS) {
-            verify(linkRepository, never()).findAllByProjetoId(any());
+            verify(linkRepository, never()).findAllByProjeto_ProjetoId(any());
         } else if (tipoConsulta == TipoConsulta.TAGS) {
             verify(projetoConsultado, never()).getTags();
         }
@@ -242,7 +252,7 @@ public class VisualizacaoSteps {
     private ProjetoEntity novoProjeto(Map<String, String> dados) {
         ProjetoEntity projeto = new ProjetoEntity();
         projeto.setProjetoId(uuid(dados.get("projetoId")));
-        projeto.setUsuarioId(USUARIO_AUTENTICADO_ID);
+        projeto.setUsuario(usuarioComId(USUARIO_AUTENTICADO_ID));
         projeto.setTitulo(dados.get("titulo"));
         projeto.setPrioridade(dados.get("prioridade"));
         projeto.setStatus(dados.get("status"));
@@ -252,7 +262,7 @@ public class VisualizacaoSteps {
     private TarefaEntity novaTarefa(Map<String, String> dados) {
         TarefaEntity tarefa = new TarefaEntity();
         tarefa.setTarefaId(uuid(dados.get("tarefaId")));
-        tarefa.setProjetoId(uuid(dados.get("projetoId")));
+        tarefa.setProjeto(projetoComId(uuid(dados.get("projetoId"))));
         tarefa.setTitulo(dados.get("titulo"));
         tarefa.setPrioridade(dados.get("prioridade"));
         tarefa.setStatus(dados.get("status"));
@@ -263,9 +273,21 @@ public class VisualizacaoSteps {
     private LinkEntity novoLink(Map<String, String> dados) {
         LinkEntity link = new LinkEntity();
         link.setLinkId(uuid(dados.get("linkId")));
-        link.setProjetoId(uuid(dados.get("projetoId")));
+        link.setProjeto(projetoComId(uuid(dados.get("projetoId"))));
         link.setUrl(dados.get("url"));
         return link;
+    }
+
+    private UsuarioEntity usuarioComId(UUID usuarioId) {
+        UsuarioEntity usuario = new UsuarioEntity();
+        usuario.setUsuarioId(usuarioId);
+        return usuario;
+    }
+
+    private ProjetoEntity projetoComId(UUID projetoId) {
+        ProjetoEntity projeto = new ProjetoEntity();
+        projeto.setProjetoId(projetoId);
+        return projeto;
     }
 
     private TagEntity novaTag(Map<String, String> dados) {

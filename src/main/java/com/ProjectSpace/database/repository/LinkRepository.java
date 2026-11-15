@@ -8,5 +8,5 @@ import java.util.UUID;
 
 public interface LinkRepository extends JpaRepository<LinkEntity, UUID> {
 
-    List<LinkEntity> findAllByProjetoId(UUID projetoId);
+    List<LinkEntity> findAllByProjeto_ProjetoId(UUID projetoId);
 }

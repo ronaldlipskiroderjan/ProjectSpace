@@ -15,16 +15,17 @@ Funcionalidade: Criar conta de usuário
       | senhaHash | hash-seguro     |
     E a resposta do cadastro deve conter somente o token e o tempo de expiração:
       | token           | token-jwt-seguro |
-      | tempoExpiracao | 3600             |
+      | tempoExpiracao | 900000           |
     E a senha do usuário deve ser codificada antes de salvar
-    E o token deve ser gerado para o usuário salvo
+    E deve associar a role "ROLE_USER" ao usuário
+    E as credenciais devem ser autenticadas antes de gerar o token
 
   Cenário: Criar conta de usuário — E-mail duplicado após normalização
     Dado os dados para criar a conta de usuário:
       | nome  | Ana                 |
       | email | " ANA@EXAMPLE.COM " |
       | senha | 12345678            |
-    E existe outro usuário com e-mail normalizado "ana@example.com" e id "00000000-0000-0000-0000-000000000002"
+    E existe outro usuário com e-mail normalizado "ana@example.com"
 
     Quando crio a conta de usuário
 
