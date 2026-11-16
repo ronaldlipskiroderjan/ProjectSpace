@@ -2,6 +2,7 @@ package com.ProjectSpace.service;
 
 import com.ProjectSpace.database.model.ProjetoEntity;
 import com.ProjectSpace.database.model.TarefaEntity;
+import com.ProjectSpace.database.model.UsuarioEntity;
 import com.ProjectSpace.database.repository.ProjetoRepository;
 import com.ProjectSpace.database.repository.TarefaRepository;
 import com.ProjectSpace.dto.request.TarefaRequestDTO;
@@ -18,22 +19,23 @@ public class TarefaService {
 
     private final TarefaRepository tarefaRepository;
     private final ProjetoRepository projetoRepository;
+    private final UsuarioService usuarioService;
 
-    public List<TarefaResponseDTO> listarTarefas(UUID usuarioAutenticadoId, UUID projetoId) {
+    public List<TarefaResponseDTO> listarTarefas(String username, UUID projetoId) {
         return null;
     }
 
-    public void adicionarTarefa(UUID usuarioAutenticadoId, TarefaRequestDTO request) {
+    public void adicionarTarefa(String username, TarefaRequestDTO request) {
         if (request.titulo() == null || request.titulo().isBlank()) {
             throw new IllegalArgumentException("TITULO_OBRIGATORIO");
         }
+        UsuarioEntity usuario = usuarioService.buscarUsuarioAutenticado(username);
         ProjetoEntity projeto = projetoRepository.findById(request.projetoId())
                 .orElseThrow(() -> new IllegalArgumentException("PROJETO_NAO_ENCONTRADO"));
-        if (!projeto.getUsuario().getUsuarioId().equals(usuarioAutenticadoId)) {
+        if (!projeto.getUsuario().getUsuarioId().equals(usuario.getUsuarioId())) {
             throw new IllegalArgumentException("ACESSO_NEGADO");
         }
         TarefaEntity tarefa = new TarefaEntity();
-        tarefa.setTarefaId(null);
         tarefa.setProjeto(projeto);
         tarefa.setTitulo(request.titulo());
         tarefa.setPrioridade(request.prioridade());
@@ -43,12 +45,12 @@ public class TarefaService {
     }
 
     public TarefaResponseDTO editarTarefa(
-            UUID usuarioAutenticadoId,
+            String username,
             UUID tarefaId,
             TarefaRequestDTO request) {
         return null;
     }
 
-    public void excluirTarefa(UUID usuarioAutenticadoId, UUID tarefaId) {
+    public void excluirTarefa(String username, UUID tarefaId) {
     }
 }

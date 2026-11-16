@@ -20,12 +20,12 @@ public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
 
-    public UsuarioResponseDTO buscarPerfil(String emailUsuarioAutenticado) {
-        return toDTO(buscarUsuarioAutenticado(emailUsuarioAutenticado));
+    public UsuarioResponseDTO buscarPerfil(String username) {
+        return toDTO(buscarUsuarioAutenticado(username));
     }
 
     public UsuarioResponseDTO editarUsuario(
-            String emailUsuarioAutenticado,
+            String username,
             UsuarioRequestDTO request) {
         if (request.nome() == null || request.nome().isBlank()) {
             throw new IllegalArgumentException("NOME_OBRIGATORIO");
@@ -39,7 +39,7 @@ public class UsuarioService {
             throw new IllegalArgumentException("EMAIL_INVALIDO");
         }
 
-        UsuarioEntity usuario = buscarUsuarioAutenticado(emailUsuarioAutenticado);
+        UsuarioEntity usuario = buscarUsuarioAutenticado(username);
 
         if (!emailNormalizado.equalsIgnoreCase(usuario.getEmail())) {
             usuarioRepository.findByEmailIgnoreCase(emailNormalizado)
@@ -57,13 +57,13 @@ public class UsuarioService {
         return toDTO(usuarioSalvo);
     }
 
-    private UsuarioEntity buscarUsuarioAutenticado(String emailUsuarioAutenticado) {
-        if (emailUsuarioAutenticado == null || emailUsuarioAutenticado.isBlank()) {
-            throw new IllegalArgumentException("USUARIO_NAO_ENCONTRADO");
+    public UsuarioEntity buscarUsuarioAutenticado(String username) {
+        if (username == null || username.isBlank()) {
+            throw new IllegalArgumentException("NAO_AUTENTICADO");
         }
 
-        String emailNormalizado = emailUsuarioAutenticado.trim().toLowerCase(Locale.ROOT);
-        return usuarioRepository.findByEmailIgnoreCase(emailNormalizado)
+        String usernameNormalizado = username.trim().toLowerCase(Locale.ROOT);
+        return usuarioRepository.findByEmailIgnoreCase(usernameNormalizado)
                 .orElseThrow(() -> new IllegalArgumentException("USUARIO_NAO_ENCONTRADO"));
     }
 

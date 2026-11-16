@@ -16,14 +16,15 @@ public class TagService {
 
     private final TagRepository tagRepository;
     private final ProjetoRepository projetoRepository;
+    private final UsuarioService usuarioService;
 
-    public List<TagResponseDTO> listarTags(UUID usuarioAutenticadoId, UUID projetoId) {
+    public List<TagResponseDTO> listarTags(String username, UUID projetoId) {
         return null;
     }
 
     public void criarTag(TagRequestDTO request) {
     }
 
-    public void vincularTagAoProjeto(UUID usuarioAutenticadoId, UUID projetoId, UUID tagId) {
+    public void vincularTagAoProjeto(String username, UUID projetoId, UUID tagId) {
     }
 }
