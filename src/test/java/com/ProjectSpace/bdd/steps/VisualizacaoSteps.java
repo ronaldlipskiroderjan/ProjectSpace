@@ -18,6 +18,7 @@ import com.ProjectSpace.service.TarefaService;
 import com.ProjectSpace.service.UsuarioService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.Before;
 import io.cucumber.java.pt.Dado;
@@ -73,7 +74,9 @@ public class VisualizacaoSteps {
 
     private TagService tagService;
 
-    private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
+    private final ObjectMapper objectMapper = new ObjectMapper()
+            .findAndRegisterModules()
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     private String username;
     private UsuarioResponseDTO perfil;
     private List<?> resultados;

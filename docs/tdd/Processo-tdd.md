@@ -224,3 +224,85 @@ da Pessoa 2 está verde sem regressão no escopo da Pessoa 1.
 
 Implementar os fluxos de edição, exclusão e visualização de tarefas, mantendo
 verdes os 21 cenários já concluídos nas Implementações 1 e 2.
+
+## GREEN parcial: Implementação 3 (edição, exclusão e visualização de tarefas)
+
+- **Status:** concluída
+- **Data:** 16/11/2026
+- **Hora de conclusão:** 11:43 (BRT/UTC-3)
+
+### Escopo implementado
+
+A terceira implementação GREEN concluiu os fluxos de:
+
+- edição de tarefa;
+- exclusão de tarefa;
+- visualização das tarefas de um projeto.
+
+As operações autenticadas identificam o usuário pelo `username`, resolvem a
+entidade autenticada por meio de `UsuarioService.buscarUsuarioAutenticado` e
+validam a propriedade do projeto antes de editar, excluir ou listar tarefas.
+
+### Regras de edição de tarefa
+
+- Consulta da tarefa pelo UUID informado.
+- Rejeição da operação quando a tarefa não existe.
+- Validação de que o projeto atual pertence ao usuário autenticado.
+- Rejeição de título ausente ou em branco.
+- Validação da propriedade do projeto de destino quando ele é alterado.
+- Atualização de projeto, título, prioridade, status e data limite.
+- Preservação do UUID original da tarefa.
+- Persistência da mesma entidade e retorno dos dados atualizados em
+  `TarefaResponseDTO`.
+- Ausência de persistência quando a operação é inválida.
+
+### Regras de exclusão de tarefa
+
+- Consulta da tarefa pelo UUID informado.
+- Rejeição da operação quando a tarefa não existe.
+- Validação de que o projeto da tarefa pertence ao usuário autenticado.
+- Exclusão somente da tarefa solicitada por meio de `deleteById`.
+- Ausência de alteração no projeto durante a exclusão.
+- Rejeição de uma segunda tentativa de exclusão da mesma tarefa, sem nova
+  chamada a `deleteById`.
+
+### Regras de visualização de tarefas
+
+- Consulta do projeto pelo UUID informado.
+- Validação de que o projeto pertence ao usuário autenticado.
+- Rejeição da consulta quando o projeto pertence a outro usuário.
+- Consulta somente das tarefas vinculadas ao projeto solicitado.
+- Conversão das entidades para `TarefaResponseDTO`.
+- Operação estritamente de leitura, sem chamadas de persistência ou exclusão.
+
+### Comando executado
+
+```bash
+LOCAL_UID=$(id -u) LOCAL_GID=$(id -g) \
+docker compose run --rm cucumber
+```
+
+### Resultado
+
+Os 10 cenários pertencentes à terceira implementação passaram. Os 21 cenários
+das Implementações 1 e 2 continuaram verdes, totalizando 31 dos 44 cenários
+aprovados:
+
+```text
+Tests run: 44, Failures: 13, Errors: 0, Skipped: 0
+BUILD FAILURE
+```
+
+Esse resultado representa o terceiro **GREEN parcial** do projeto: todo o escopo
+da Pessoa 3 está verde sem regressão nos escopos das Pessoas 1 e 2. Os 13
+cenários restantes pertencem aos fluxos de link e tag da próxima implementação.
+
+### Evidência do GREEN parcial
+
+- [`results/GREEN_TDD_Impl3.png`](./results/GREEN_TDD_Impl3.png)
+
+### Próxima etapa
+
+Implementar os fluxos de adição e visualização de links e de criação, vínculo e
+visualização de tags, mantendo verdes os 31 cenários já concluídos nas
+Implementações 1, 2 e 3.
