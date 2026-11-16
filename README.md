@@ -2,7 +2,6 @@
   <img src="icons/IconProject.png" alt="Logo do ProjectSpace" width="850">
 </p>
 
-# ProjectSpace
 
 O ProjectSpace é uma API para organização de projetos pessoais e profissionais. A aplicação concentra informações importantes de cada projeto em um único espaço, permitindo estruturar atividades, referências e classificações sem misturar dados entre usuários.
 
