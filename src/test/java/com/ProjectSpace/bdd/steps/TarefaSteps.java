@@ -182,6 +182,8 @@ public class TarefaSteps {
         esperado.forEach((campo, valor) -> {
             if (campo.equals("projetoId")) {
                 assertThat(tarefa.getProjeto().getProjetoId()).isEqualTo(UUID.fromString(valor));
+            } else if (campo.equals("dataLimite")) {
+                assertThat(tarefa).extracting(campo).isEqualTo(LocalDate.parse(valor));
             } else {
                 Object valorEsperado = campo.endsWith("Id") ? UUID.fromString(valor) : valor;
                 assertThat(tarefa).extracting(campo).isEqualTo(valorEsperado);

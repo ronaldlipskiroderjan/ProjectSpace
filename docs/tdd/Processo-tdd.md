@@ -143,7 +143,84 @@ continuam no estado RED.
 
 - [`results/GREEN_TDD_Impl1.png`](./results/GREEN_TDD_Impl1.png)
 
+## GREEN parcial: Implementação 2 (projeto e adição de tarefa)
+
+- **Status:** concluída
+- **Data:** 16/11/2026
+- **Hora de conclusão:** 00:00 (BRT/UTC-3)
+
+### Escopo implementado
+
+A segunda implementação GREEN concluiu os fluxos de:
+
+- criação de projeto;
+- adição de tarefa a um projeto;
+- visualização dos projetos do usuário autenticado.
+
+Os métodos autenticados passaram a receber o `username` fornecido por
+`Authentication.getName()`. A resolução da entidade autenticada ficou
+centralizada em `UsuarioService.buscarUsuarioAutenticado`, e as Services de
+projeto e tarefa usam o `usuarioId` dessa entidade para filtrar dados e validar
+propriedade.
+
+### Regras de criação de projeto
+
+- Identificação do proprietário pelo usuário autenticado, sem receber UUID de
+  usuário no corpo ou na rota.
+- Rejeição de título ausente ou em branco.
+- Aceitação somente das prioridades previstas pelo domínio.
+- Associação da entidade `UsuarioEntity` autenticada ao novo projeto.
+- Persistência de uma nova `ProjetoEntity`, deixando a geração do UUID para a
+  camada de persistência.
+- Manutenção do retorno `void` no método de criação.
+
+### Regras de adição de tarefa
+
+- Validação do título obrigatório.
+- Consulta do projeto informado no Request.
+- Rejeição de projeto inexistente.
+- Validação de que o projeto pertence ao usuário autenticado.
+- Rejeição da operação quando o projeto pertence a outro usuário.
+- Associação da entidade `ProjetoEntity` carregada à nova tarefa.
+- Cópia de título, prioridade, status e data limite para a entidade.
+- Persistência da nova tarefa com UUID gerado pela camada de persistência.
+- Manutenção do retorno `void` no método de criação.
+
+### Regras de visualização de projetos
+
+- Consulta do usuário pelo `username` autenticado.
+- Filtro por `usuarioId` usando
+  `projetoRepository.findAllByUsuario_UsuarioId`.
+- Conversão das entidades para `ProjetoResponseDTO` em método dedicado.
+- Retorno somente dos projetos pertencentes ao usuário autenticado.
+- Operação estritamente de leitura, sem chamadas de persistência.
+
+### Comando executado
+
+```bash
+LOCAL_UID=$(id -u) LOCAL_GID=$(id -g) \
+docker compose run --rm --build cucumber
+```
+
+### Resultado
+
+Os 10 cenários pertencentes à segunda implementação passaram, e os 11 cenários
+da implementação de usuário continuaram verdes. A suíte passou a ter 21 dos 44
+cenários aprovados:
+
+```text
+Tests run: 44, Failures: 23, Errors: 0, Skipped: 0
+BUILD FAILURE
+```
+
+Esse resultado representa o segundo **GREEN parcial** do projeto: todo o escopo
+da Pessoa 2 está verde sem regressão no escopo da Pessoa 1.
+
+### Evidência do GREEN parcial
+
+- [`results/GREEN_TDD_Impl2.png`](./results/GREEN_TDD_Impl2.png)
+
 ### Próxima etapa
 
-Implementar o fluxo de criação e visualização de projetos e a adição de tarefas,
-mantendo os 11 cenários de usuário verdes durante a evolução da suíte.
+Implementar os fluxos de edição, exclusão e visualização de tarefas, mantendo
+verdes os 21 cenários já concluídos nas Implementações 1 e 2.
