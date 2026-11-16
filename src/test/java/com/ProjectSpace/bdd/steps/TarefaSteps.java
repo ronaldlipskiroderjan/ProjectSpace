@@ -11,6 +11,7 @@ import com.ProjectSpace.service.TarefaService;
 import com.ProjectSpace.service.UsuarioService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.Before;
 import io.cucumber.java.pt.Dado;
@@ -56,7 +57,9 @@ public class TarefaSteps {
     @InjectMocks
     private TarefaService tarefaService;
 
-    private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
+    private final ObjectMapper objectMapper = new ObjectMapper()
+            .findAndRegisterModules()
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     private Map<String, String> dados;
     private TarefaResponseDTO resposta;
     private Throwable erro;
