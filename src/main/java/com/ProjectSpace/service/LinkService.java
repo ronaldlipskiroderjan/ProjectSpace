@@ -16,11 +16,12 @@ public class LinkService {
 
     private final LinkRepository linkRepository;
     private final ProjetoRepository projetoRepository;
+    private final UsuarioService usuarioService;
 
-    public List<LinkResponseDTO> listarLinks(UUID usuarioAutenticadoId, UUID projetoId) {
+    public List<LinkResponseDTO> listarLinks(String username, UUID projetoId) {
         return null;
     }
 
-    public void adicionarLink(UUID usuarioAutenticadoId, LinkRequestDTO request) {
+    public void adicionarLink(String username, LinkRequestDTO request) {
     }
 }

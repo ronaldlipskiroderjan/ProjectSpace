@@ -2,8 +2,10 @@ package com.ProjectSpace.bdd.steps;
 
 import com.ProjectSpace.dto.request.ProjetoRequestDTO;
 import com.ProjectSpace.database.model.ProjetoEntity;
+import com.ProjectSpace.database.model.UsuarioEntity;
 import com.ProjectSpace.database.repository.ProjetoRepository;
 import com.ProjectSpace.service.ProjetoService;
+import com.ProjectSpace.service.UsuarioService;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.Before;
 import io.cucumber.java.pt.Dado;
@@ -29,22 +31,32 @@ public class ProjetoSteps {
 
     private static final UUID USUARIO_AUTENTICADO_ID =
             UUID.fromString("00000000-0000-0000-0000-000000000001");
+    private static final String USERNAME = "ana@example.com";
 
     @Mock
     private ProjetoRepository projetoRepository;
+
+    @Mock
+    private UsuarioService usuarioService;
 
     @InjectMocks
     private ProjetoService projetoService;
 
     private Map<String, String> dados;
-    private UUID usuarioAutenticadoId;
+    private String username;
     private Throwable erro;
 
     @Before
     public void prepararCenario() {
         MockitoAnnotations.openMocks(this);
-        usuarioAutenticadoId = USUARIO_AUTENTICADO_ID;
+        username = USERNAME;
         erro = null;
+        UsuarioEntity usuario = new UsuarioEntity();
+        usuario.setUsuarioId(USUARIO_AUTENTICADO_ID);
+        usuario.setEmail(USERNAME);
+        when(usuarioService.buscarUsuarioAutenticado(USERNAME)).thenReturn(usuario);
+        when(usuarioService.buscarUsuarioAutenticado(null))
+                .thenThrow(new IllegalArgumentException("NAO_AUTENTICADO"));
         when(projetoRepository.save(any(ProjetoEntity.class)))
                 .thenAnswer(invocacao -> invocacao.getArgument(0));
     }
@@ -56,7 +68,7 @@ public class ProjetoSteps {
 
     @E("o usuário do projeto não está autenticado")
     public void usuarioNaoAutenticado() {
-        usuarioAutenticadoId = null;
+        username = null;
     }
 
     @Quando("crio o projeto")
@@ -66,7 +78,7 @@ public class ProjetoSteps {
                     dados.get("titulo"),
                     dados.get("prioridade"),
                     dados.get("status"));
-            projetoService.criarProjeto(usuarioAutenticadoId, request);
+            projetoService.criarProjeto(username, request);
         });
     }
 
@@ -84,7 +96,7 @@ public class ProjetoSteps {
     @E("o método de criação do projeto não deve retornar conteúdo")
     public void verificarRetornoVoid() throws NoSuchMethodException {
         assertThat(ProjetoService.class
-                .getDeclaredMethod("criarProjeto", UUID.class, ProjetoRequestDTO.class)
+                .getDeclaredMethod("criarProjeto", String.class, ProjetoRequestDTO.class)
                 .getReturnType()).isEqualTo(void.class);
     }
 

@@ -7,6 +7,7 @@ import com.ProjectSpace.database.model.UsuarioEntity;
 import com.ProjectSpace.database.repository.LinkRepository;
 import com.ProjectSpace.database.repository.ProjetoRepository;
 import com.ProjectSpace.service.LinkService;
+import com.ProjectSpace.service.UsuarioService;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.Before;
 import io.cucumber.java.pt.Dado;
@@ -34,12 +35,16 @@ public class LinkProjetoSteps {
 
     private static final UUID USUARIO_AUTENTICADO_ID =
             UUID.fromString("00000000-0000-0000-0000-000000000001");
+    private static final String USERNAME = "ana@example.com";
 
     @Mock
     private LinkRepository linkRepository;
 
     @Mock
     private ProjetoRepository projetoRepository;
+
+    @Mock
+    private UsuarioService usuarioService;
 
     @InjectMocks
     private LinkService linkService;
@@ -51,6 +56,10 @@ public class LinkProjetoSteps {
     public void prepararCenario() {
         MockitoAnnotations.openMocks(this);
         erro = null;
+        UsuarioEntity usuario = new UsuarioEntity();
+        usuario.setUsuarioId(USUARIO_AUTENTICADO_ID);
+        usuario.setEmail(USERNAME);
+        when(usuarioService.buscarUsuarioAutenticado(USERNAME)).thenReturn(usuario);
         when(linkRepository.save(any(LinkEntity.class)))
                 .thenAnswer(invocacao -> invocacao.getArgument(0));
     }
@@ -76,7 +85,7 @@ public class LinkProjetoSteps {
             LinkRequestDTO request = new LinkRequestDTO(
                     uuid(dados.get("projetoId")),
                     dados.get("url"));
-            linkService.adicionarLink(USUARIO_AUTENTICADO_ID, request);
+            linkService.adicionarLink(USERNAME, request);
         });
     }
 
@@ -94,7 +103,7 @@ public class LinkProjetoSteps {
     @E("o método de criação do link não deve retornar conteúdo")
     public void verificarRetornoVoid() throws NoSuchMethodException {
         assertThat(LinkService.class
-                .getDeclaredMethod("adicionarLink", UUID.class, LinkRequestDTO.class)
+                .getDeclaredMethod("adicionarLink", String.class, LinkRequestDTO.class)
                 .getReturnType()).isEqualTo(void.class);
     }
 

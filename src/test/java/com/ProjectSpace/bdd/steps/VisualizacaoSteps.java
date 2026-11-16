@@ -24,7 +24,6 @@ import io.cucumber.java.pt.Dado;
 import io.cucumber.java.pt.E;
 import io.cucumber.java.pt.Entao;
 import io.cucumber.java.pt.Quando;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -64,24 +63,18 @@ public class VisualizacaoSteps {
     @Mock
     private TagRepository tagRepository;
 
-    @InjectMocks
     private UsuarioService usuarioService;
 
-    @InjectMocks
     private ProjetoService projetoService;
 
-    @InjectMocks
     private TarefaService tarefaService;
 
-    @InjectMocks
     private LinkService linkService;
 
-    @InjectMocks
     private TagService tagService;
 
     private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
-    private UUID usuarioAutenticadoId;
-    private String emailUsuarioAutenticado;
+    private String username;
     private UsuarioResponseDTO perfil;
     private List<?> resultados;
     private Throwable erro;
@@ -91,8 +84,12 @@ public class VisualizacaoSteps {
     @Before
     public void prepararCenario() {
         MockitoAnnotations.openMocks(this);
-        usuarioAutenticadoId = USUARIO_AUTENTICADO_ID;
-        emailUsuarioAutenticado = USUARIO_AUTENTICADO_EMAIL;
+        usuarioService = new UsuarioService(usuarioRepository);
+        projetoService = new ProjetoService(projetoRepository, usuarioService);
+        tarefaService = new TarefaService(tarefaRepository, projetoRepository, usuarioService);
+        linkService = new LinkService(linkRepository, projetoRepository, usuarioService);
+        tagService = new TagService(tagRepository, projetoRepository, usuarioService);
+        username = USUARIO_AUTENTICADO_EMAIL;
         perfil = null;
         resultados = null;
         erro = null;
@@ -107,19 +104,19 @@ public class VisualizacaoSteps {
         usuario.setUsuarioId(uuid(dados.get("usuarioId")));
         usuario.setNome(dados.get("nome"));
         usuario.setEmail(dados.get("email"));
-        emailUsuarioAutenticado = usuario.getEmail();
+        username = usuario.getEmail();
         when(usuarioRepository.findByEmailIgnoreCase(usuario.getEmail()))
                 .thenReturn(java.util.Optional.of(usuario));
     }
 
     @Dado("não há usuário autenticado para visualização")
     public void usuarioNaoAutenticado() {
-        usuarioAutenticadoId = null;
-        emailUsuarioAutenticado = null;
+        username = null;
     }
 
     @Dado("existem para visualização os projetos:")
     public void existemProjetos(DataTable tabela) {
+        prepararUsuarioAutenticado();
         List<ProjetoEntity> projetos = tabela.asMaps(String.class, String.class).stream()
                 .map(this::novoProjeto)
                 .toList();
@@ -128,6 +125,7 @@ public class VisualizacaoSteps {
 
     @Dado("existe para visualização um projeto com id {string} e usuário {string}")
     public void existeProjeto(String projetoId, String usuarioId) {
+        prepararUsuarioAutenticado();
         projetoConsultado = mock(ProjetoEntity.class);
         UsuarioEntity usuario = mock(UsuarioEntity.class);
         when(projetoConsultado.getProjetoId()).thenReturn(uuid(projetoId));
@@ -169,34 +167,34 @@ public class VisualizacaoSteps {
     @Quando("visualizo meu perfil")
     public void visualizarPerfil() {
         tipoConsulta = TipoConsulta.PERFIL;
-        erro = catchThrowable(() -> perfil = usuarioService.buscarPerfil(emailUsuarioAutenticado));
+        erro = catchThrowable(() -> perfil = usuarioService.buscarPerfil(username));
     }
 
     @Quando("visualizo meus projetos")
     public void visualizarProjetos() {
         tipoConsulta = TipoConsulta.PROJETOS;
-        erro = catchThrowable(() -> resultados = projetoService.listarProjetos(usuarioAutenticadoId));
+        erro = catchThrowable(() -> resultados = projetoService.listarProjetos(username));
     }
 
     @Quando("visualizo as tarefas do projeto {string}")
     public void visualizarTarefas(String projetoId) {
         tipoConsulta = TipoConsulta.TAREFAS;
         erro = catchThrowable(() -> resultados =
-                tarefaService.listarTarefas(usuarioAutenticadoId, uuid(projetoId)));
+                tarefaService.listarTarefas(username, uuid(projetoId)));
     }
 
     @Quando("visualizo os links do projeto {string}")
     public void visualizarLinks(String projetoId) {
         tipoConsulta = TipoConsulta.LINKS;
         erro = catchThrowable(() -> resultados =
-                linkService.listarLinks(usuarioAutenticadoId, uuid(projetoId)));
+                linkService.listarLinks(username, uuid(projetoId)));
     }
 
     @Quando("visualizo as tags do projeto {string}")
     public void visualizarTags(String projetoId) {
         tipoConsulta = TipoConsulta.TAGS;
         erro = catchThrowable(() -> resultados =
-                tagService.listarTags(usuarioAutenticadoId, uuid(projetoId)));
+                tagService.listarTags(username, uuid(projetoId)));
     }
 
     @Entao("o perfil retornado deve conter:")
@@ -282,6 +280,13 @@ public class VisualizacaoSteps {
         UsuarioEntity usuario = new UsuarioEntity();
         usuario.setUsuarioId(usuarioId);
         return usuario;
+    }
+
+    private void prepararUsuarioAutenticado() {
+        UsuarioEntity usuario = usuarioComId(USUARIO_AUTENTICADO_ID);
+        usuario.setEmail(USUARIO_AUTENTICADO_EMAIL);
+        when(usuarioRepository.findByEmailIgnoreCase(USUARIO_AUTENTICADO_EMAIL))
+                .thenReturn(java.util.Optional.of(usuario));
     }
 
     private ProjetoEntity projetoComId(UUID projetoId) {

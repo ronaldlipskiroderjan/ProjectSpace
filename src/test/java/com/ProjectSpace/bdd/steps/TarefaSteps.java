@@ -8,6 +8,7 @@ import com.ProjectSpace.database.model.UsuarioEntity;
 import com.ProjectSpace.database.repository.ProjetoRepository;
 import com.ProjectSpace.database.repository.TarefaRepository;
 import com.ProjectSpace.service.TarefaService;
+import com.ProjectSpace.service.UsuarioService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.datatable.DataTable;
@@ -41,12 +42,16 @@ public class TarefaSteps {
 
     private static final UUID USUARIO_AUTENTICADO_ID =
             UUID.fromString("00000000-0000-0000-0000-000000000001");
+    private static final String USERNAME = "ana@example.com";
 
     @Mock
     private TarefaRepository tarefaRepository;
 
     @Mock
     private ProjetoRepository projetoRepository;
+
+    @Mock
+    private UsuarioService usuarioService;
 
     @InjectMocks
     private TarefaService tarefaService;
@@ -62,6 +67,10 @@ public class TarefaSteps {
         dados = new HashMap<>();
         resposta = null;
         erro = null;
+        UsuarioEntity usuario = new UsuarioEntity();
+        usuario.setUsuarioId(USUARIO_AUTENTICADO_ID);
+        usuario.setEmail(USERNAME);
+        when(usuarioService.buscarUsuarioAutenticado(USERNAME)).thenReturn(usuario);
         when(tarefaRepository.save(any(TarefaEntity.class)))
                 .thenAnswer(invocacao -> invocacao.getArgument(0));
     }
@@ -95,7 +104,7 @@ public class TarefaSteps {
     public void adicionarTarefa() {
         erro = catchThrowable(() -> {
             TarefaRequestDTO request = requestSemId();
-            tarefaService.adicionarTarefa(USUARIO_AUTENTICADO_ID, request);
+            tarefaService.adicionarTarefa(USERNAME, request);
         });
     }
 
@@ -104,23 +113,23 @@ public class TarefaSteps {
         erro = catchThrowable(() -> {
             UUID tarefaId = uuid(dados.get("tarefaId"));
             TarefaRequestDTO request = requestSemId();
-            resposta = tarefaService.editarTarefa(USUARIO_AUTENTICADO_ID, tarefaId, request);
+            resposta = tarefaService.editarTarefa(USERNAME, tarefaId, request);
         });
     }
 
     @Quando("excluo a tarefa")
     public void excluirTarefa() {
         UUID tarefaId = uuid(dados.get("tarefaId"));
-        erro = catchThrowable(() -> tarefaService.excluirTarefa(USUARIO_AUTENTICADO_ID, tarefaId));
+        erro = catchThrowable(() -> tarefaService.excluirTarefa(USERNAME, tarefaId));
     }
 
     @Quando("excluo a tarefa duas vezes")
     public void excluirTarefaDuasVezes() {
         UUID tarefaId = uuid(dados.get("tarefaId"));
-        tarefaService.excluirTarefa(USUARIO_AUTENTICADO_ID, tarefaId);
+        tarefaService.excluirTarefa(USERNAME, tarefaId);
         clearInvocations(tarefaRepository);
         when(tarefaRepository.findById(tarefaId)).thenReturn(Optional.empty());
-        erro = catchThrowable(() -> tarefaService.excluirTarefa(USUARIO_AUTENTICADO_ID, tarefaId));
+        erro = catchThrowable(() -> tarefaService.excluirTarefa(USERNAME, tarefaId));
     }
 
     @Entao("deve salvar a tarefa com os valores:")
@@ -145,7 +154,7 @@ public class TarefaSteps {
     @E("o método de criação da tarefa não deve retornar conteúdo")
     public void verificarRetornoVoid() throws NoSuchMethodException {
         assertThat(TarefaService.class
-                .getDeclaredMethod("adicionarTarefa", UUID.class, TarefaRequestDTO.class)
+                .getDeclaredMethod("adicionarTarefa", String.class, TarefaRequestDTO.class)
                 .getReturnType()).isEqualTo(void.class);
     }
 

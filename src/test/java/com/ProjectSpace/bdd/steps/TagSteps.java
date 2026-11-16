@@ -7,6 +7,7 @@ import com.ProjectSpace.database.model.UsuarioEntity;
 import com.ProjectSpace.database.repository.ProjetoRepository;
 import com.ProjectSpace.database.repository.TagRepository;
 import com.ProjectSpace.service.TagService;
+import com.ProjectSpace.service.UsuarioService;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.Before;
 import io.cucumber.java.pt.Dado;
@@ -37,12 +38,16 @@ public class TagSteps {
 
     private static final UUID USUARIO_AUTENTICADO_ID =
             UUID.fromString("00000000-0000-0000-0000-000000000001");
+    private static final String USERNAME = "ana@example.com";
 
     @Mock
     private TagRepository tagRepository;
 
     @Mock
     private ProjetoRepository projetoRepository;
+
+    @Mock
+    private UsuarioService usuarioService;
 
     @InjectMocks
     private TagService tagService;
@@ -60,6 +65,10 @@ public class TagSteps {
         tagsDosProjetos.clear();
         tags.clear();
         erro = null;
+        UsuarioEntity usuario = new UsuarioEntity();
+        usuario.setUsuarioId(USUARIO_AUTENTICADO_ID);
+        usuario.setEmail(USERNAME);
+        when(usuarioService.buscarUsuarioAutenticado(USERNAME)).thenReturn(usuario);
         when(tagRepository.save(any(TagEntity.class)))
                 .thenAnswer(invocacao -> invocacao.getArgument(0));
     }
@@ -118,7 +127,7 @@ public class TagSteps {
         UUID projetoId = uuid(dados.get("projetoId"));
         UUID tagId = uuid(dados.get("tagId"));
         erro = catchThrowable(() ->
-                tagService.vincularTagAoProjeto(USUARIO_AUTENTICADO_ID, projetoId, tagId));
+                tagService.vincularTagAoProjeto(USERNAME, projetoId, tagId));
     }
 
     @Entao("deve salvar a tag com os valores:")
