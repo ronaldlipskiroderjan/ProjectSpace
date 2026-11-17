@@ -93,4 +93,11 @@ public class TagService {
 
         projetoRepository.save(projeto);
     }
+
+    private TagResponseDTO toDTO(TagEntity tag) {
+        return new TagResponseDTO(
+                tag.getTagId(),
+                tag.getNome()
+        );
+    }
 }

@@ -34,8 +34,8 @@ Esse resultado registra o primeiro **RED de compilação** do projeto.
 
 ### Evidências do RED
 
-- [`results/RED_TDD_FASE1_1.png`](./results/RED_TDD_FASE1_1.png)
-- [`results/RED_TDD_FASE1_2.png`](./results/RED_TDD_FASE1_2.png)
+- [`results/RED/RED_TDD_FASE1_1.png`](results/RED/RED_TDD_FASE1_1.png)
+- [`results/RED/RED_TDD_FASE1_2.png`](results/RED/RED_TDD_FASE1_2.png)
 
 ## Fase 2 — RED comportamental
 
@@ -75,6 +75,8 @@ Esse resultado registra o **RED comportamental** do projeto.
 
 A fase **GREEN total** será registrada quando os 44 cenários passarem. Cada
 incremento funcional concluído será registrado antes disso como um GREEN parcial.
+
+##
 
 ## GREEN parcial: Implementação 1 (usuário)
 
@@ -141,7 +143,7 @@ continuam no estado RED.
 
 ### Evidência do GREEN parcial
 
-- [`results/GREEN_TDD_Impl1.png`](./results/GREEN_TDD_Impl1.png)
+- [`results/GREEN/GREEN_TDD_Impl1.png`](results/GREEN/GREEN_TDD_Impl1.png)
 
 ## GREEN parcial: Implementação 2 (projeto e adição de tarefa)
 
@@ -218,7 +220,7 @@ da Pessoa 2 está verde sem regressão no escopo da Pessoa 1.
 
 ### Evidência do GREEN parcial
 
-- [`results/GREEN_TDD_Impl2.png`](./results/GREEN_TDD_Impl2.png)
+- [`results/GREEN/GREEN_TDD_Impl2.png`](results/GREEN/GREEN_TDD_Impl2.png)
 
 ### Próxima etapa
 
@@ -299,10 +301,94 @@ cenários restantes pertencem aos fluxos de link e tag da próxima implementaç�
 
 ### Evidência do GREEN parcial
 
-- [`results/GREEN_TDD_Impl3.png`](./results/GREEN_TDD_Impl3.png)
+- [`results/GREEN/GREEN_TDD_Impl3.png`](results/GREEN/GREEN_TDD_Impl3.png)
 
 ### Próxima etapa
 
 Implementar os fluxos de adição e visualização de links e de criação, vínculo e
 visualização de tags, mantendo verdes os 31 cenários já concluídos nas
 Implementações 1, 2 e 3.
+
+## GREEN total: Implementação 4 (links e tags)
+
+- **Status:** concluída
+- **Data:** 16/11/2026
+- **Hora de conclusão:** 15:32 (BRT/UTC-3)
+
+### Escopo implementado
+
+A quarta implementação GREEN concluiu os fluxos de:
+
+- adição de link a um projeto;
+- visualização dos links de um projeto;
+- criação de tag;
+- vínculo de tag a um projeto;
+- visualização das tags de um projeto.
+
+As operações autenticadas identificam o usuário pelo `username`, resolvem a
+entidade autenticada por meio de `UsuarioService.buscarUsuarioAutenticado` e
+validam a propriedade do projeto antes de adicionar ou visualizar links e de
+vincular ou visualizar tags.
+
+### Regras de adição e visualização de links
+
+- Consulta do projeto pelo UUID informado.
+- Rejeição da operação quando o projeto não existe.
+- Validação de que o projeto pertence ao usuário autenticado.
+- Rejeição da operação quando o projeto pertence a outro usuário.
+- Associação do novo link à entidade do projeto consultado.
+- Preservação da URL exatamente como recebida, sem validação ou alteração de
+  formato.
+- Persistência do novo link com UUID gerado pela camada de persistência.
+- Consulta somente dos links vinculados ao projeto solicitado.
+- Conversão das entidades para `LinkResponseDTO` durante a visualização.
+- Operação de visualização estritamente de leitura, sem chamadas de
+  persistência.
+
+### Regras de criação de tag
+
+- Validação do nome obrigatório.
+- Normalização do nome com remoção dos espaços das extremidades e conversão
+  para letras minúsculas.
+- Consulta por nome sem diferenciação entre letras maiúsculas e minúsculas.
+- Rejeição da criação quando já existe uma tag com o mesmo nome.
+- Persistência da nova tag com UUID gerado pela camada de persistência.
+- Ausência de persistência quando a operação é inválida.
+
+### Regras de vínculo e visualização de tags
+
+- Consulta do projeto e validação de que ele pertence ao usuário autenticado.
+- Consulta da tag existente pelo UUID informado.
+- Rejeição do vínculo quando a tag não existe.
+- Rejeição de uma tag já vinculada ao mesmo projeto.
+- Permissão para compartilhar a mesma tag entre projetos diferentes.
+- Inclusão da entidade existente na coleção de tags e persistência do projeto.
+- Leitura das tags diretamente da coleção do projeto durante a visualização.
+- Conversão das entidades para `TagResponseDTO`.
+- Operação de visualização estritamente de leitura, sem salvar o projeto ou as
+  tags.
+
+### Comando executado
+
+```bash
+LOCAL_UID=$(id -u) LOCAL_GID=$(id -g) \
+docker compose run --rm cucumber
+```
+
+### Resultado
+
+Os 13 cenários pertencentes à quarta implementação passaram, e os 31 cenários
+das Implementações 1, 2 e 3 continuaram verdes. Com isso, todos os 44 cenários
+da suíte foram aprovados:
+
+```text
+Tests run: 44, Failures: 0, Errors: 0, Skipped: 0
+BUILD SUCCESS
+```
+
+Esse resultado representa o **GREEN total** do projeto: todo o escopo da Pessoa
+4 está verde, sem regressão nos escopos das Pessoas 1, 2 e 3.
+
+### Evidência do GREEN total
+
+- [`results/GREEN/GREEN_TDD_Impl4.png`](results/GREEN/GREEN_TDD_Impl4.png)
